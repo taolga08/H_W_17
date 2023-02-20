@@ -25,10 +25,24 @@ class Movie(db.Model):
     director = db.relationship("Director")
 
 
+class MovieSchema(Schema):
+    id = fields.Int()
+    title = fields.Str()
+    description = fields.Str()
+    trailer = fields.Str()
+    year = fields.Int()
+    rating = fields.Float()
+
+
 class Director(db.Model):
     __tablename__ = 'director'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255))
+
+
+class DirectorSchema(Schema):
+    id = fields.Int()
+    name = fields.Str()
 
 
 class Genre(db.Model):
@@ -37,21 +51,19 @@ class Genre(db.Model):
     name = db.Column(db.String(255))
 
 
-class MovieSchema(Schema):
+class GenreSchema(Schema):
     id = fields.Int()
-    title = fields.Str()
-    description = fields.Str()
-    trailer = fields.Str()
-    year = fields.Int()
-    rating = fields.Float()
-    genre_id = fields.Int()
-    director_id = fields.Int()
+    name = fields.Str()
 
 
 movie_schema = MovieSchema()
+director_schema = DirectorSchema()
+genre_schema = GenreSchema()
 
 api = Api(app)
 movie_ns = api.namespace('movies')
+director_ns = api.namespace('directors')
+genre_ns = api.namespace('genres')
 
 
 @movie_ns.route('/')
@@ -105,6 +117,38 @@ class MovieView(Resource):
         db.session.delete(movie)
         db.session.commit()
         return '', 204
+
+
+@director_ns.route('/')
+class DirectorsView(Resource):
+    def get(self):
+        all_directors = Director.query.all()
+        return movie_schema.dump(all_directors), 200
+
+
+@director_ns.route('/<int:did>')
+class DirectorView(Resource):
+    def get(self, did: int):
+        director = Director.query.get(did)
+        if not director:
+            return "", 404
+        return director_schema.dump(director), 200
+
+
+@genre_ns.route('/')
+class GenresView(Resource):
+    def get(self):
+        all_genres = Genre.query.all()
+        return genre_schema.dump(all_genres), 200
+
+
+@genre_ns.route('/<int:gid>')
+class GenreView(Resource):
+    def get(self, gid: int):
+        genre = Genre.query.get(gid)
+        if not genre:
+            return "", 404
+        return genre_schema.dump(genre), 200
 
 
 if __name__ == '__main__':
